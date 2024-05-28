@@ -336,15 +336,12 @@ Profiles:
         Orderer:
             <<: *OrdererDefaults
             Organizations:
-            - *OrdererOrg
+                - *OrdererOrg
             Capabilities:
                 <<: *OrdererCapabilities
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-            - <<: *OrdererOrg
         Consortiums:
             SampleConsortium:
                 Organizations:
                 - *Org1
                 - *Org2
+
