@@ -28,6 +28,33 @@ function networkUpFromHost2() {
     docker exec -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 -e CORE_PEER_LOCALMSPID="Org1MSP" -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt cli peer channel update -o orderer2.example.com:8050 -c mychannel -f ./channel-artifacts/Org1MSPanchors.tx --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer2.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 }
 
+function packageChaincode() {
+    cd ../chaincode/fabcar/go
+    GO111MODULE=on go mod vendor
+    cd ../../../network
+    docker exec cli peer lifecycle chaincode package fabcar.tar.gz --path /opt/gopath/src/github.com/chaincode/fabcar/go --label fabcar_1
+}
+
+function installChaincodeFromHost1() {
+    docker exec cli peer lifecycle chaincode install fabcar.tar.gz
+    docker exec -e CORE_PEER_ADDRESS=peer1.org1.example.com:8051 -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt cli peer lifecycle chaincode install fabcar.tar.gz
+    installOutput=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp -e CORE_PEER_ADDRESS=peer0.org2.example.com:9051 -e CORE_PEER_LOCALMSPID="Org2MSP" -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt cli peer lifecycle chaincode install fabcar.tar.gz)
+    IFS=':'
+    read -ra ADDR <<< "$installOutput"
+    packageID=${ADDR[2]}
+    echo "Il package ID è ${packageID}"
+}
+
+function installChaincodeFromHost2() {
+    docker exec cli peer lifecycle chaincode install fabcar.tar.gz
+    docker exec -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp -e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 -e CORE_PEER_LOCALMSPID="Org1MSP" -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt cli peer lifecycle chaincode install fabcar.tar.gz
+    installOutput=$(docker exec -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp -e CORE_PEER_ADDRESS=peer1.org1.example.com:8051 -e CORE_PEER_LOCALMSPID="Org1MSP" -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt cli peer lifecycle chaincode install fabcar.tar.gz)
+    IFS=':'
+    read -ra ADDR <<< "$installOutput"
+    packageID=${ADDR[2]}
+    echo "Il package ID è ${packageID}"
+}
+
 MODE=$1
 WHICH=$2
 FILE_NAME="host${WHICH}.yaml"
@@ -55,6 +82,16 @@ elif [ "${MODE}" == "networkup" ]; then
         networkUpFromHost1
     elif [ "${HOST}" == "2" ]; then
         networkUpFromHost2
+    else
+        echo "Nessun host in esecuzione"
+    fi
+elif [ "${MODE}" == "deployCC" ]; then
+    if [ "${HOST}" == "1" ]; then
+        packageChaincode
+        installChaincodeFromHost1
+    elif [ "${HOST}" == "2" ]; then
+        packageChaincode
+        installChaincodeFromHost2
     else
         echo "Nessun host in esecuzione"
     fi
