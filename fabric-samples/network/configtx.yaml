@@ -19,7 +19,7 @@ Organizations:
     - &OrdererOrg
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: OrdererOrg
+        Name: OrdererMSP
 
         # ID to load the MSP definition as
         ID: OrdererMSP
@@ -193,12 +193,6 @@ Application: &ApplicationDefaults
         Admins:
             Type: ImplicitMeta
             Rule: "MAJORITY Admins"
-        LifecycleEndorsement:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Endorsement"
-        Endorsement:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Endorsement"
 
     Capabilities:
         <<: *ApplicationCapabilities
@@ -214,7 +208,26 @@ Orderer: &OrdererDefaults
 
     # Orderer Type: The orderer implementation to start
     OrdererType: etcdraft
+    Addresses:
+        - orderer.example.com:7050
+        - orderer2.example.com:8050
+        - orderer3.example.com:9050
+    # Batch Timeout: The amount of time to wait before creating a batch
+    BatchTimeout: 2s
+    # Batch Size: Controls the number of messages batched into a block
+    BatchSize:
 
+        # Max Message Count: The maximum number of messages to permit in a batch
+        MaxMessageCount: 10
+
+        # Absolute Max Bytes: The absolute maximum number of bytes allowed for
+        # the serialized messages in a batch.
+        AbsoluteMaxBytes: 99 MB
+
+        # Preferred Max Bytes: The preferred maximum number of bytes allowed for
+        # the serialized messages in a batch. A message larger than the preferred
+        # max bytes will result in a batch larger than preferred max bytes.
+        PreferredMaxBytes: 512 KB    
     EtcdRaft:
         Consenters:
             - Host: orderer.example.com
@@ -229,34 +242,6 @@ Orderer: &OrdererDefaults
               Port: 9050
               ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
               ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
-    
-    Addresses:
-        - orderer.example.com:7050
-        - orderer2.example.com:8050
-        - orderer3.example.com:9050
-
-    # Batch Timeout: The amount of time to wait before creating a batch
-    BatchTimeout: 2s
-
-    # Batch Size: Controls the number of messages batched into a block
-    BatchSize:
-
-        # Max Message Count: The maximum number of messages to permit in a batch
-        MaxMessageCount: 10
-
-        # Absolute Max Bytes: The absolute maximum number of bytes allowed for
-        # the serialized messages in a batch.
-        AbsoluteMaxBytes: 99 MB
-
-        # Preferred Max Bytes: The preferred maximum number of bytes allowed for
-        # the serialized messages in a batch. A message larger than the preferred
-        # max bytes will result in a batch larger than preferred max bytes.
-        PreferredMaxBytes: 512 KB
-
-    # Organizations is the list of orgs which are defined as participants on
-    # the orderer side of the network
-    Organizations:
-
     # Policies defines the set of policies at this level of the config tree
     # For Orderer policies, their canonical path is
     #   /Channel/Orderer/<PolicyName>
@@ -274,7 +259,10 @@ Orderer: &OrdererDefaults
         # from the orderer for the peer to validate it.
         BlockValidation:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: "ANY Writers"    
+    Capabilities:
+        <<: *OrdererCapabilities
+
 
 ################################################################################
 #
@@ -318,21 +306,8 @@ Channel: &ChannelDefaults
 ################################################################################
 Profiles:
 
-    TwoOrgsChannel:
-        Consortium: SampleConsortium
+    TwoOrgsOrdererGenesis:
         <<: *ChannelDefaults
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *Org1
-                - *Org2
-            Capabilities:
-                <<: *ApplicationCapabilities
-
-    SampleMultiNodeEtcdRaft:
-        <<: *ChannelDefaults
-        Capabilities:
-            <<: *ChannelCapabilities
         Orderer:
             <<: *OrdererDefaults
             Organizations:
@@ -344,4 +319,16 @@ Profiles:
                 Organizations:
                 - *Org1
                 - *Org2
+
+    TwoOrgsChannel:
+        <<: *ChannelDefaults
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org1
+                - *Org2
+            Capabilities:
+                <<: *ApplicationCapabilities
+
 

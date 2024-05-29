@@ -19,7 +19,7 @@ services:
 
   orderer.example.com:
     extends:
-      file:   base/docker-compose-base.yaml
+      file: base/docker-compose-base.yaml
       service: orderer.example.com
     container_name: orderer.example.com
     networks:
