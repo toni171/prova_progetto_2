@@ -64,15 +64,11 @@ WHICH=$2
 FILE_NAME="host${WHICH}.yaml"
 
 if [ "${WHICH}" == "1" ]; then
-    ORDERER_NUM=""
+    ORDERER_HOSTNAME="orderer.example.com"
     ORDERER_PORT="7050"
-    OTHER_ORG="2"
-    OTHER_PORT="9051"
 elif [ "${WHICH}" == "2" ]; then
-    ORDERER_NUM="2"
+    ORDERER_HOSTNAME="orderer2.example.com"
     ORDERER_PORT="8050"
-    OTHER_ORG="1"
-    OTHER_PORT="8051"
 fi
 
 if [ "${MODE}" == "hostup" ]; then
